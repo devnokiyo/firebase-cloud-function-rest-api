@@ -27,9 +27,9 @@ app.post('/', (req, res) => {
   }).then(data => {
     return res.status(201).send(data);
   })
-  .catch(error => {
-    res.status(400).send(error);      
-  });
+    .catch(error => {
+      res.status(400).send(error);
+    });
 });
 
 app.put('/:id', (req, res) => {
@@ -40,32 +40,34 @@ app.put('/:id', (req, res) => {
     user_name: req.body.user_name,
     age: Number(req.body.age)
   };
-  ref.update(updates).then(data => {
-    return res.send(data);
-  })
-  .catch(error => {
-    res.status(400).send(error);      
-  });
+  ref.update(updates);
+  return res.status(204).send("Updated");
 });
 
 app.delete('/:id', (req, res) => {
   const ref = admin.database().ref(`users/${req.params.id}`);
   ref.remove().then(data => {
-    return res.send(data);
+    return res.status(204).send("Deleted");
   })
-  .catch(error => {
-    res.status(400).send(error);      
-  });
+    .catch(error => {
+      res.status(400).send(error);
+    });
 });
 
 app.get('/', (req, res) => {
-  const ref = admin.database().ref('users');
-  ref.once('value').then(data => {
-    return res.send(data);
+  let users = []
+  const query = admin.database().ref("users").orderByKey();
+  query.once("value").then(snapshot => {
+    snapshot.forEach(childSnapshot => {
+      let user = childSnapshot.val();
+      user.key = childSnapshot.key;
+      users.push(user);
+    });
+    return res.send(users);
   })
-  .catch(error => {
-    res.status(404).send('No data available.');
-  });
+    .catch(error => {
+      res.status(404).send('No data available.');
+    });
 });
 
 exports.users = functions.https.onRequest(app);
